@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>trtb.lol text editor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Ensure body fills the viewport and uses flexbox for layout */
+        body {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            background-color: black;
+            font-family: monospace;
+            font-size: 10pt;
+            color: #fff; /* White text for UI elements */
+        }
+
+        /* Fixed Header */
+        #header-fixed {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 10; /* Ensure it's above scrolling content */
+            background-color: black; /* Match body background */
+            padding: 0.25rem; /* p-1 */
+            box-sizing: border-box;
+        }
+
+        #header-fixed h1,
+        #header-fixed h2 {
+             margin-bottom: 0;
+        }
+         #header-fixed h2 {
+             margin-left: 2ch;
+             margin-top: 0.25rem;
+         }
+
+        /* Fixed Footer */
+        #footer-fixed {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            background-color: black;
+            padding: 0.25rem; /* p-1 */
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        #controls {
+            margin-top: 0;
+            margin-bottom: 0.25rem; /* mb-1 */
+        }
+
+        #legend {
+            font-style: italic;
+            margin-top: 0;
+        }
+
+        /* Main Scrollable Content Area */
+        #main-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-top: 3.5rem;
+            margin-bottom: 3.5rem; /* Adjusted for potentially taller legend/controls */
+            padding: 0 0.25rem; /* px-1 */
+            box-sizing: border-box;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Editor Styles */
+        #editor {
+            display: block;
+            width: 100%;
+            height: auto;
+            min-height: 0;
+            padding: 0.25rem; /* p-1 */
+            border-top: 1px solid #fff;
+            border-left: 1px solid #fff;
+            border-right: 1px solid #fff;
+            border-bottom: none;
+            border-radius: 0;
+            background-color: black;
+            color: red;
+            font-size: 10pt;
+            font-family: monospace;
+            resize: none;
+            outline: none;
+            box-sizing: border-box;
+            overflow-y: hidden;
+            margin-left: 0;
+            margin-right: 0;
+            margin-top: 15in;
+            padding-bottom: 0;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            flex-shrink: 0;
+        }
+
+        #editor-measure {
+            position: absolute;
+            visibility: hidden;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            padding: 0.25rem; /* p-1 */
+            border: 1px solid;
+            font-size: 10pt;
+            font-family: monospace;
+            line-height: 1.5;
+            box-sizing: border-box;
+            width: 100%;
+        }
+
+        /* Modal styles (generic for save, message) */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: #000;
+            margin: 15% auto;
+            padding: 10px;
+            border: 1px solid #fff;
+            width: 80%;
+            max-width: 350px;
+            border-radius: 0;
+            box-shadow: none;
+            color: #fff;
+            font-family: monospace;
+            font-size: 10pt;
+        }
+
+        /* These specific styles are for elements *within* the modal if not fully covered by Tailwind */
+        .modal-title-style { /* Renamed to avoid conflict if there was a .modal-title class from Tailwind */
+            font-weight: bold;
+            margin-bottom: 0.5rem; /* mb-2 */
+            font-size: 10pt;
+        }
+        .modal-body-style {  /* Renamed */
+            margin-bottom: 0.5rem; /* mb-2 */
+            font-size: 10pt; /* Ensure consistent font size */
+        }
+
+        .close-button {
+            color: #fff;
+            float: right;
+            font-size: 10pt;
+            font-weight: bold;
+            margin: -5px -5px 0 0;
+            padding: 0 0.25rem; /* px-1 */
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: #ccc;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .ui-element { /* General class for UI consistency if needed beyond Tailwind */
+            font-family: monospace;
+            font-size: 10pt;
+            color: #fff;
+        }
+
+        /* Specific overrides or utilities not easily done with Tailwind inline */
+        .modal-checkbox-custom { /* If needed for specific checkbox styling */
+            margin-right: 0.25rem; /* mr-1 */
+        }
+        .modal-error-message { /* For the error text styling specifically */
+            color: #f56565; /* red-500 */
+            font-size: 10pt; /* Explicitly 10pt for errors */
+            margin-bottom: 0.25rem; /* mb-1 */
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="header-fixed" class="ui-element p-1"> <h1 class="text-white font-bold mb-0 text-[10pt]">trtb.lol text editor</h1>
+        <h2 class="text-white ml-[2ch] mt-1 mb-1 text-[10pt]">download the webpage to inspect and run locally.</h2>
+    </div>
+
+    <div id="main-content">
+        <textarea id="editor" class="ui-element p-1" placeholder="ᓚᘏᗢ"></textarea> <div id="editor-measure"></div>
+    </div>
+
+    <div id="footer-fixed" class="ui-element p-1"> <div id="controls" class="flex items-center space-x-1 mb-1">
+            <button id="saveButton" class="px-1 py-0.5 bg-black text-white border border-white rounded-none hover:bg-gray-800 focus:outline-none focus:ring-0 m-0 text-[10pt] font-mono transition duration-150 ease-in-out">s</button>
+            <button id="loadButton" class="px-1 py-0.5 bg-black text-white border border-white rounded-none hover:bg-gray-800 focus:outline-none focus:ring-0 m-0 text-[10pt] font-mono transition duration-150 ease-in-out">l</button>
+        </div>
+        <div id="legend" class="italic">
+            "s:save(alt+c) | l:load(alt+v) | killui:alt+x"
+        </div>
+    </div>
+
+    <div id="saveModal" class="modal ui-element">
+        <div class="modal-content">
+            <span class="close-button" id="closeSaveModalButton">&times;</span>
+            <h2 class="modal-title-style">Save File</h2>
+
+            <div class="mb-1">
+                <label for="filenameInput" class="block text-white text-sm font-bold mb-0 text-[10pt]">Filename:</label>
+                <input type="text" id="filenameInput" class="shadow-none appearance-none border border-white rounded-none w-full py-0.5 px-1 bg-black text-white leading-tight focus:outline-none focus:shadow-none text-[10pt] mb-1">
+            </div>
+
+            <div class="mb-1">
+                <label class="block text-white text-sm font-bold mb-0 text-[10pt]">Filetype:</label>
+                <div class="mt-0.5">
+                    <label class="inline-flex items-center text-[10pt]">
+                        <input type="radio" class="form-radio text-blue-600" name="filetype" value="txt" checked>
+                        <span class="ml-0.5 text-white text-[10pt]">.txt</span>
+                    </label>
+                    <label class="inline-flex items-center text-[10pt] ml-1">
+                        <input type="radio" class="form-radio text-blue-600" name="filetype" value="md">
+                        <span class="ml-0.5 text-white text-[10pt]">.md</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="block mt-2 mb-2"> {/* Tailwind classes for spacing */}
+                <label class="inline-flex items-center text-[10pt]">
+                    <input type="checkbox" id="rememberFileCheckbox" class="form-checkbox text-blue-600 modal-checkbox-custom">
+                    <span class="text-white text-[10pt]">Remember filename and type for next save</span>
+                </label>
+            </div>
+
+            <div id="saveError" class="modal-error-message" style="display: none;"></div>
+
+            <button id="confirmSaveButton" class="px-1 py-0.5 bg-black text-white border border-white rounded-none hover:bg-gray-800 focus:outline-none focus:ring-0 m-0 text-[10pt] font-mono transition duration-150 ease-in-out">Confirm Save</button>
+        </div>
+    </div>
+
+    <div id="messageModal" class="modal ui-element">
+        <div class="modal-content">
+            <span class="close-button" id="closeMessageModalButton">&times;</span>
+            <h2 id="messageModalTitle" class="modal-title-style">Message</h2>
+            <div id="messageModalBody" class="modal-body-style text-[10pt]"> {/* Added text-[10pt] for consistency */}
+                Sample message content.
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        const editor = document.getElementById('editor');
+        const mainContent = document.getElementById('main-content');
+        const editorMeasure = document.getElementById('editor-measure');
+        const headerFixed = document.getElementById('header-fixed');
+        const footerFixed = document.getElementById('footer-fixed');
+
+        // Save Modal Elements
+        const saveModal = document.getElementById('saveModal');
+        const closeSaveModalButton = document.getElementById('closeSaveModalButton');
+        const filenameInput = document.getElementById('filenameInput');
+        const confirmSaveButton = document.getElementById('confirmSaveButton');
+        const saveError = document.getElementById('saveError');
+        const saveButton = document.getElementById('saveButton');
+        const rememberFileCheckbox = document.getElementById('rememberFileCheckbox');
+
+        // Load Button Element
+        const loadButton = document.getElementById('loadButton');
+
+        // Message Modal Elements
+        const messageModal = document.getElementById('messageModal');
+        const messageModalTitle = document.getElementById('messageModalTitle');
+        const messageModalBody = document.getElementById('messageModalBody');
+        const closeMessageModalButton = document.getElementById('closeMessageModalButton');
+
+        let uiVisible = true;
+
+        // File persistence state
+        let currentFileHandle = null; // For File System Access API
+        let rememberedFilename = 'untitled'; // For prefill and fallback
+        let rememberedFiletype = 'txt';   // For prefill and fallback
+        let shouldRememberDetails = false; // Reflects checkbox state for future saves
+
+        // --- Utility Functions ---
+        function adjustEditorHeight() {
+            editorMeasure.textContent = editor.value || ' ';
+            editorMeasure.style.width = editor.clientWidth + 'px';
+            const computedStyle = window.getComputedStyle(editor);
+            const lineHeight = parseFloat(computedStyle.lineHeight) || parseFloat(computedStyle.fontSize) * 1.5;
+            const paddingTop = parseFloat(computedStyle.paddingTop);
+            const paddingBottom = parseFloat(computedStyle.paddingBottom);
+            const borderTop = parseFloat(computedStyle.borderTopWidth);
+            const borderBottom = parseFloat(computedStyle.borderBottomWidth);
+            const minHeight = lineHeight + paddingTop + paddingBottom + borderTop + borderBottom;
+            editor.style.height = Math.max(editorMeasure.offsetHeight, minHeight) + 'px';
+        }
+
+        function scrollToBottom() {
+             setTimeout(() => { mainContent.scrollTop = mainContent.scrollHeight; }, 0);
+        }
+
+        function extractFilenameAndType(fullFilename) {
+            const lastDot = fullFilename.lastIndexOf('.');
+            let name = fullFilename;
+            let ext = 'txt'; // Default extension
+
+            if (lastDot > 0 && lastDot < fullFilename.length - 1) { 
+                name = fullFilename.substring(0, lastDot);
+                const potentialExt = fullFilename.substring(lastDot + 1).toLowerCase();
+                if (potentialExt === 'md') {
+                    ext = 'md';
+                } else {
+                    ext = 'txt'; 
+                }
+            }
+            return { name, ext };
+        }
+
+        // --- Modal Management ---
+        function showMessage(title, message) {
+            messageModalTitle.textContent = title;
+            messageModalBody.textContent = message;
+            messageModal.style.display = 'block';
+        }
+
+        closeSaveModalButton.addEventListener('click', () => {
+            saveModal.style.display = 'none';
+            saveError.style.display = 'none';
+        });
+
+        closeMessageModalButton.addEventListener('click', () => {
+            messageModal.style.display = 'none';
+        });
+
+        window.addEventListener('click', (event) => {
+            if (event.target === saveModal) {
+                saveModal.style.display = 'none';
+                saveError.style.display = 'none';
+            }
+            if (event.target === messageModal) {
+                messageModal.style.display = 'none';
+            }
+        });
+
+        // --- Save Functionality ---
+        function displaySaveModal() {
+            filenameInput.value = rememberedFilename || 'untitled';
+            document.querySelector(`input[name="filetype"][value="${rememberedFiletype || 'txt'}"]`).checked = true;
+            rememberFileCheckbox.checked = shouldRememberDetails;
+            saveError.style.display = 'none';
+            saveModal.style.display = 'block';
+            filenameInput.focus();
+        }
+
+        async function performSave(textToSave, filename, filetype, isQuickSave = false) {
+            const suggestedFilenameWithExt = `${filename}.${filetype}`;
+
+            try {
+                if (window.showSaveFilePicker) {
+                    let handleToUse;
+                    if (isQuickSave && currentFileHandle) {
+                        handleToUse = currentFileHandle;
+                    } else {
+                        handleToUse = await window.showSaveFilePicker({
+                            suggestedName: suggestedFilenameWithExt,
+                            types: [{
+                                description: 'Text Files',
+                                accept: { 'text/plain': ['.txt', '.md'] },
+                            }],
+                        });
+                        if (shouldRememberDetails) {
+                            currentFileHandle = handleToUse;
+                            const pickedDetails = extractFilenameAndType(handleToUse.name);
+                            rememberedFilename = pickedDetails.name;
+                            rememberedFiletype = pickedDetails.ext;
+                        } else {
+                            currentFileHandle = null; 
+                        }
+                    }
+                    const writableStream = await handleToUse.createWritable();
+                    await writableStream.write(textToSave);
+                    await writableStream.close();
+                } else {
+                    const blob = new Blob([textToSave], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = suggestedFilenameWithExt;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    if (shouldRememberDetails) {
+                        rememberedFilename = filename;
+                        rememberedFiletype = filetype;
+                    }
+                }
+            } catch (error) {
+                if (error.name !== 'AbortError') { 
+                    console.error("Saving failed:", error);
+                    showMessage("Save Error", `Saving failed: ${error.message}`);
+                    if (isQuickSave) currentFileHandle = null;
+                }
+            }
+        }
+
+        saveButton.addEventListener('click', handleSaveRequest);
+        confirmSaveButton.addEventListener('click', async () => {
+            const filenameValue = filenameInput.value.trim();
+            const filetypeValue = document.querySelector('input[name="filetype"]:checked').value;
+            shouldRememberDetails = rememberFileCheckbox.checked; 
+
+            if (!filenameValue) {
+                saveError.textContent = "Filename cannot be empty.";
+                saveError.style.display = 'block';
+                return;
+            }
+            saveError.style.display = 'none';
+            saveModal.style.display = 'none';
+
+            rememberedFilename = filenameValue;
+            rememberedFiletype = filetypeValue;
+
+            await performSave(editor.value, filenameValue, filetypeValue, false);
+        });
+
+        function handleSaveRequest() {
+            if (uiVisible) {
+                if (shouldRememberDetails && (currentFileHandle || (rememberedFilename !== 'untitled' && rememberedFilename !== ''))) {
+                    performSave(editor.value, rememberedFilename, rememberedFiletype, true);
+                } else {
+                    displaySaveModal();
+                }
+            }
+        }
+
+        // --- Load Functionality ---
+        loadButton.addEventListener('click', handleLoadRequest);
+
+        function handleLoadRequest() {
+            if (!uiVisible) return;
+
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.txt,.md,text/plain'; 
+
+            fileInput.addEventListener('change', async (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    try {
+                        const text = await file.text();
+                        editor.value = text;
+                        adjustEditorHeight();
+                        scrollToBottom();
+                        const loadedFileDetails = extractFilenameAndType(file.name);
+                        rememberedFilename = loadedFileDetails.name;
+                        rememberedFiletype = loadedFileDetails.ext;
+                        currentFileHandle = null; 
+                    } catch (err) {
+                        console.error("Loading failed:", err);
+                        showMessage("Load Error", `Could not load file: ${err.message}`);
+                    }
+                }
+            });
+            fileInput.click();
+        }
+
+        // --- Keyboard Shortcuts & UI ---
+        document.addEventListener('keydown', (event) => {
+            if (event.altKey) {
+                if (event.code === 'KeyC' && uiVisible) {
+                    event.preventDefault();
+                    handleSaveRequest();
+                }
+                if (event.code === 'KeyV' && uiVisible) { 
+                    event.preventDefault();
+                    handleLoadRequest();
+                }
+
+                if (event.code.startsWith('Digit')) {
+                    const digit = parseInt(event.code.replace('Digit', ''), 10);
+                    if (digit >= 1 && digit <= 9) {
+                        event.preventDefault();
+                        const marginPercentage = digit * 5;
+                        const contentWidthPercentage = 100 - (marginPercentage * 2);
+                        editor.style.marginLeft = `${marginPercentage}%`;
+                        editor.style.marginRight = `${marginPercentage}%`;
+                        editor.style.width = `${contentWidthPercentage}%`;
+                        adjustEditorHeight();
+                        scrollToBottom();
+                    } else if (digit === 0) {
+                         event.preventDefault();
+                         editor.style.marginLeft = '0%';
+                         editor.style.marginRight = '0%';
+                         editor.style.width = '100%';
+                         adjustEditorHeight();
+                         scrollToBottom();
+                    }
+                }
+
+                if (event.code === 'Space') { 
+                    event.preventDefault();
+                    scrollToBottom();
+                }
+
+                if (event.code === 'KeyX') { 
+                    event.preventDefault();
+                    uiVisible = !uiVisible;
+                    const displayStyle = uiVisible ? 'block' : 'none';
+                    const flexDisplayStyle = uiVisible ? 'flex' : 'none';
+
+                    headerFixed.style.display = displayStyle;
+                    footerFixed.style.display = uiVisible ? 'flex' : 'none'; 
+
+                    const controlsElement = footerFixed.querySelector('#controls');
+                    if (controlsElement) controlsElement.style.display = flexDisplayStyle;
+                    const legendElement = footerFixed.querySelector('#legend');
+                    if (legendElement) legendElement.style.display = displayStyle;
+
+                    setTimeout(() => {
+                        if (uiVisible) {
+                            mainContent.style.marginTop = `${headerFixed.offsetHeight}px`;
+                            mainContent.style.marginBottom = `${footerFixed.offsetHeight}px`;
+                        } else {
+                            mainContent.style.marginTop = '0';
+                            mainContent.style.marginBottom = '0';
+                        }
+                         scrollToBottom();
+                         adjustEditorHeight(); 
+                    }, 0);
+                }
+            }
+        });
+
+        editor.addEventListener('input', () => {
+             adjustEditorHeight();
+             scrollToBottom();
+        });
+        editor.addEventListener('focus', () => {
+             scrollToBottom();
+        });
+        window.addEventListener('resize', () => {
+             if (uiVisible) {
+                mainContent.style.marginTop = `${headerFixed.offsetHeight}px`;
+                mainContent.style.marginBottom = `${footerFixed.offsetHeight}px`;
+             }
+             adjustEditorHeight();
+             scrollToBottom();
+        });
+        window.addEventListener('load', () => {
+             if (uiVisible) {
+                mainContent.style.marginTop = `${headerFixed.offsetHeight}px`;
+                mainContent.style.marginBottom = `${footerFixed.offsetHeight}px`;
+             }
+             adjustEditorHeight();
+             scrollToBottom();
+        });
+
+        /*
+        List of Changes (2025-05-12):
+        1. Added Load Functionality:
+            - "l" button in the footer controls.
+            - Alt+V keyboard shortcut to trigger file loading.
+            - Uses standard file input dialog, attempts to load any file as plain text.
+            - Loaded filename pre-fills save dialog but doesn't auto-enable "remember".
+        2. Enhanced Save Functionality:
+            - Save shortcut remains Alt+C.
+            - Save modal includes "Remember filename and type for next save" checkbox.
+            - If "Remember" is checked:
+                - Tries to save directly to the last used file/location (File System Access API for overwrite, fallback re-downloads with same name).
+            - If "Remember" is not checked (or first save):
+                - Save modal appears, then system "Save As" dialog.
+        3. UI Updates:
+            - Legend in footer updated with new shortcuts: "s:save(alt+c) | l:load(alt+v) | killui:alt+x".
+            - Added a generic `messageModal` for displaying errors (e.g., load errors) and other messages.
+        4. Filename Handling:
+            - `extractFilenameAndType` utility function improved for parsing.
+            - Global variables (`currentFileHandle`, `rememberedFilename`, `rememberedFiletype`, `shouldRememberDetails`) manage save state.
+        5. CSS corrections: Removed attempts to use Tailwind classes as CSS property values. Applied Tailwind classes directly in HTML. Added specific CSS for modal sub-elements where needed (e.g., `.modal-title-style`, `.modal-error-message`).
+        6. `Alt+Space` correctly remains for "scroll to bottom".
+        */
+    </script>
+    </body>
+</html>
