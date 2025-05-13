@@ -1,6 +1,11 @@
 # edtr
 *my personal text and markdown editor. for creative writing, not for code. one html file.*
 
+## how to use: 
+1. download the html file
+2. run it in your favorite browser
+3. figure it out lol :D
+
 ## qna
 
 ### "what is it?"
