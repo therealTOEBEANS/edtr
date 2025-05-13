@@ -2,7 +2,7 @@
 *my personal text and markdown editor. for creative writing, not for code. one html file.*
 
 ## how to use: 
-1. download the html file
+1. [download the html file](https://github.com/therealTOEBEANS/edtr/blob/421d507b13613d4c5fd8bbbbdc2920f2b253399c/edtr.html)
 2. run it in your favorite browser
 3. figure it out lol :D
 
