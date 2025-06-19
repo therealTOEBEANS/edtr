@@ -23,8 +23,14 @@ edtr has an unusual design. where did this come from?
 
 i am an author. i have a lot of inspirations that aren't very common in my generation, especially Kerouac. i don't like everything he did, or most of his personal choices, but his method he used to write his novels has always stuck with me since I was very young and reading about his life. 
 
+### Kerouac
+
 he termed his method "spontanious prose;" inspired by improvisation in jazz and buddhist thought. when he wrote *on the road,* he didn't use paper sheets in his typeawriter; he used a scroll of paper. he wanted to improvise freely, and to him that meant not stopping even to change the sheets in his typewriter. 
 
 he also used long connecting dashes instead of periods, and binged alcohol and hard drugs while writing; which is not something i choose emulate. I do however let the damn river run. 
 
-edtr is meant to look like a scroll, as it slowly rises from the working line of the typewriter. you can adjuest the width of your scroll using alt+numrow. you can save your work using alt+c. you can kill the 
+### edtr
+
+edtr is meant to look like a scroll, as it slowly rises from the working line of the typewriter. you can adjuest the width of your scroll using alt+numrow. you can save your work using alt+c. you can kill the ui with alt+x. there's not much more to it, really. 
+
+it this all feels right to you, go ahead and download the code and change things. i'd love to see different color schemes from my personal one; or new shortcuts, or whatever you like. if i like what you've done, i might borrow your ideas!
